@@ -11,40 +11,49 @@ namespace QlikClearAppTitle
 	{
 		static void Main(string[] args)
 		{
-			if (args.Length != 1)
+			if (!args.Any())
 				PrintUsage();
 
 			var location = Location.FromUri("http://localhost:4848");
 			location.AsDirectConnectionToPersonalEdition();
 
-			var appId = location.AppWithNameOrDefault(args[0]);
-			if (appId == null)
-			{
-				Console.WriteLine("App not found: " + args[0]);
-			}
+            var appIds = location.GetAppIdentifiers();
+            foreach (var arg in args)
+            {
+                Console.WriteLine(arg);
+                var appId = appIds.SingleOrDefault(appId => appId.AppId.EndsWith(arg));
+                if (appId == null)
+                {
+                    Console.WriteLine("App not found: " + arg);
+                }
+                else
+                {
+                    Console.WriteLine("App found: "+ appId.AppId);
+                }
 
-			using (var app = location.App(appId, noData: true))
-			{
-				var appProps = app.GetAppProperties();
-				if (!appProps.IsSet("qTitle"))
-				{
-					Console.WriteLine("Title not set. No change required.");
-					return;
-				}
+                using (var app = location.App(appId, noData: true))
+                {
+                    var appProps = app.GetAppProperties();
+                    if (!appProps.IsSet("qTitle"))
+                    {
+                        Console.WriteLine("Title not set. No change required.");
+                        continue;
+                    }
 
-				Console.WriteLine(appProps.PrintStructure(Formatting.Indented));
-				var structure = JObject.Parse(appProps.PrintStructure());
-				structure.Remove("qTitle");
-				var newAppProps = app.Session.Deserialize<NxAppProperties>(structure);
-				Console.WriteLine(newAppProps.PrintStructure(Formatting.Indented));
-				app.SetAppProperties(newAppProps);
-				app.DoSave();
-			}
-		}
+                    Console.WriteLine(appProps.PrintStructure(Formatting.Indented));
+                    var structure = JObject.Parse(appProps.PrintStructure());
+                    structure.Remove("qTitle");
+                    var newAppProps = app.Session.Deserialize<NxAppProperties>(structure);
+                    Console.WriteLine(newAppProps.PrintStructure(Formatting.Indented));
+                    app.SetAppProperties(newAppProps);
+                    app.DoSave();
+                }
+            }
+        }
 
 		private static void PrintUsage()
 		{
-			Console.WriteLine("Usage: QlikClearAppTitle.exe <appName>");
+			Console.WriteLine("Usage: QlikClearAppTitle.exe <qvfFile> [<qvfFile>*]");
 			Environment.Exit(1);
 		}
 	}
