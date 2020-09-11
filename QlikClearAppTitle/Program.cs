@@ -31,7 +31,7 @@ namespace QlikClearAppTitle
                     Console.WriteLine("App found: "+ appId.AppId);
                 }
 
-                using (var app = location.App(appId, noData: true))
+                using (var app = location.App(appId))
                 {
                     var appProps = app.GetAppProperties();
                     if (!appProps.IsSet("qTitle"))
