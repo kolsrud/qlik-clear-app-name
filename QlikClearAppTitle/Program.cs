@@ -20,18 +20,17 @@ namespace QlikClearAppTitle
             var appIds = location.GetAppIdentifiers();
             foreach (var arg in args)
             {
-                Console.WriteLine(arg);
+                Console.Write(arg);
                 var appId = appIds.SingleOrDefault(appId => appId.AppId.EndsWith(arg));
                 if (appId == null)
                 {
-                    Console.WriteLine("App not found: " + arg);
-                }
-                else
-                {
-                    Console.WriteLine("App found: "+ appId.AppId);
+                    Console.WriteLine(" - App not found.");
+                    continue;
                 }
 
-                using (var app = location.App(appId))
+                Console.Write(" - App found: "+ appId.AppId + " Opening... ");
+                
+                using (var app = location.AppAsync(appId).Result)
                 {
                     var appProps = app.GetAppProperties();
                     if (!appProps.IsSet("qTitle"))
@@ -40,11 +39,10 @@ namespace QlikClearAppTitle
                         continue;
                     }
 
-                    Console.WriteLine(appProps.PrintStructure(Formatting.Indented));
                     var structure = JObject.Parse(appProps.PrintStructure());
                     structure.Remove("qTitle");
                     var newAppProps = app.Session.Deserialize<NxAppProperties>(structure);
-                    Console.WriteLine(newAppProps.PrintStructure(Formatting.Indented));
+                    Console.WriteLine("Title cleared. Saving...");
                     app.SetAppProperties(newAppProps);
                     app.DoSave();
                 }
